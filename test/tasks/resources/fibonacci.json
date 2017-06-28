@@ -1,0 +1,21 @@
+{
+  "Name": "fibonacci",
+  "Description": "teste description",
+  "Version": 1,
+  "Tasks": [{
+    "Name": "task_1",
+    "TaskReference": "task_Fibonacci",
+    "Rollback": {
+      "Name": "teste_rollbacK",
+      "Step": "task_2_rollback"
+    }
+  }, {
+    "Name": "task_2",
+    "TaskReference": "task_Multiplus",
+    "Dependency": ["task_1"],
+    "Rollback": {
+      "Name": "teste_rollbacK",
+      "Step": "task_1_rollback"
+    }
+  }]
+}
