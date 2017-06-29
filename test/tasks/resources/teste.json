@@ -1,0 +1,9 @@
+{
+  "Name": "teste",
+  "Description": "teste description",
+  "Version": 1,
+  "Tasks": [{
+    "Name": "task_1",
+    "TaskReference": "task_Teste"
+  }]
+}
