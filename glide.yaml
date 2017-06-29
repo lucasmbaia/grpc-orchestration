@@ -1,0 +1,8 @@
+package: github.com/lucasmbaia/grpc-orchestration
+import:
+- package: golang.org/x/net/context
+- package: google.golang.org/grpc
+- package: google.golang.org/grpc/reflection
+- package: github.com/golang/protobuf/proto
+- package: github.com/grpc-ecosystem/grpc-gateway
+  version: 1.2.0

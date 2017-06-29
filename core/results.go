@@ -7,7 +7,7 @@ import (
 
 type Results map[string][]reflect.Value
 
-func convertResults(res Results) (map[string]string, error) {
+func ConvertResults(res Results) (map[string]string, error) {
   var (
     body  []byte
     err	  error

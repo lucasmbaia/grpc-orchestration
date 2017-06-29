@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "orchestrarion";
+option go_package = "orchestration";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
@@ -14,7 +14,7 @@ message Task {
 }
 
 message Result {
-  map<string, string> resutl = 1;
+  map<string, string> response = 1;
 }
 
 service OrchestrationService {

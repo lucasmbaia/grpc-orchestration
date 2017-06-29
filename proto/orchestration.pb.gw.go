@@ -3,11 +3,11 @@
 // DO NOT EDIT!
 
 /*
-Package orchestrarion is a reverse proxy.
+Package orchestration is a reverse proxy.
 
 It translates gRPC into RESTful JSON APIs.
 */
-package orchestrarion
+package orchestration
 
 import (
 	"io"
