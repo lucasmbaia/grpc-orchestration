@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "orchestrarion";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+package orchestration;
+
+message Task {
+  string tracking = 1;
+  string name = 2;
+  string parameters = 3;
+}
+
+message Result {
+  map<string, string> resutl = 1;
+}
+
+service OrchestrationService {
+  rpc CallTask(Task) returns (Result) {}
+
+  rpc Health(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/v1/health"
+    };
+  }
+}
