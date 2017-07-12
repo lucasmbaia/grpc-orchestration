@@ -6,6 +6,7 @@ import (
 
   "github.com/lucasmbaia/grpc-orchestration/config"
   "github.com/lucasmbaia/grpc-orchestration/proto"
+  "github.com/lucasmbaia/grpc-orchestration/consul"
   "google.golang.org/grpc/credentials"
   "google.golang.org/grpc/reflection"
   "google.golang.org/grpc"
@@ -28,13 +29,13 @@ func (c ConfigCMD) Run() error {
   )
 
   go func() {
-    if listen, err = net.Listen(config.Env.TypeConnection, ":" + strconv.Itoa(config.Env.ServicePort)); err != nil {
+    if listen, err = net.Listen(config.EnvConfig.TypeConnection, ":" + strconv.Itoa(config.EnvConfig.ServicePort)); err != nil {
       errChan <- err
       return
     }
 
     if c.SSL {
-      if creds, err = credentials.NewServerTLSFromFile(config.Env.CertFile, config.Env.KeyFile); err != nil {
+      if creds, err = credentials.NewServerTLSFromFile(config.EnvConfig.CertFile, config.EnvConfig.KeyFile); err != nil {
 	errChan <- err
 	return
       }
@@ -44,11 +45,20 @@ func (c ConfigCMD) Run() error {
       }
     }
 
+    if c.RegisterConsul {
+      if err = consul.RegisterService(); err != nil {
+	errChan <- err
+	return
+      }
+    }
+
     s = grpc.NewServer(opts...)
     orchestration.RegisterOrchestrationServiceServer(s, orchestrationServer)
     reflection.Register(s)
 
     errChan <-s.Serve(listen)
+
+    errChan <-gateway(c.SSL)
   }()
 
   select {
