@@ -7,6 +7,7 @@ import (
   "path"
   "os"
 
+  "github.com/lucasmbaia/go-environment/etcd"
   //"gopkg.in/go-playground/validator.v9"
 )
 
@@ -60,6 +61,28 @@ func (c ConfigWorkflow) RegisterWorkflows() error {
   }
 
   if c.EtcdURL != "" {
+    var (
+      config	etcd.Config
+      client	etcd.Client
+      workflow	Workflow
+    )
+
+    config = etcd.Config {
+      Endpoints:  []string{c.EtcdURL},
+      TimeOut:	  5,
+    }
+
+    if client, err = config.NewClient(); err != nil {
+      return err
+    }
+
+    for _, key := range c.Keys {
+      if err = client.Get(key, &workflow, false, false); err != nil {
+	return err
+      }
+
+      WorkflowsRegistred[workflow.Name] = workflow
+    }
   } else {
     if c.Dir[len(c.Dir)-1:] != "/" {
       c.Dir = c.Dir + "/"

@@ -1,8 +1,20 @@
-hash: 9616cdca60d69e356bb2b66317afb7ff1cf23823c8cbad0eec60e09919ff7577
-updated: 2017-06-29T09:41:11.481093252-03:00
+hash: aaeda19153b5ad2945915b898bd9534b1ef872bedf0490dbdcd58bfaeb9f5621
+updated: 2017-07-12T09:10:47.226460893-03:00
 imports:
+- name: github.com/coreos/etcd
+  version: 61fc123e7a8b14a0a258aa3f5c4159861b1ec2e7
+  subpackages:
+  - client
+  - pkg/pathutil
+  - pkg/srv
+  - pkg/types
+  - version
+- name: github.com/coreos/go-semver
+  version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
+  subpackages:
+  - semver
 - name: github.com/golang/protobuf
-  version: 6a1fa9404c0aebf36c879bc50152edcc953910d2
+  version: 4bd1920723d7b7c925de087aa32e2187708897f7
   subpackages:
   - jsonpb
   - proto
@@ -16,8 +28,31 @@ imports:
   - runtime
   - runtime/internal
   - utilities
+- name: github.com/hashicorp/consul
+  version: 9e83a034e3eb83f470fe6280cd85c25ef275fd30
+  subpackages:
+  - api
+- name: github.com/hashicorp/go-cleanhttp
+  version: 3573b8b52aa7b37b9358d966a898feb387f62437
+- name: github.com/hashicorp/go-rootcerts
+  version: 6bb64b370b90e7ef1fa532be9e591a81c3493e00
+- name: github.com/hashicorp/serf
+  version: e39abe475740649229c5c72b0cc1da10da7ed23a
+  subpackages:
+  - coordinate
+- name: github.com/lucasmbaia/go-environment
+  version: cf9d87ad87e6f14c2a93773c9e8cd35ef830df6e
+  subpackages:
+  - etcd
+  - local
+- name: github.com/mitchellh/go-homedir
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/ugorji/go
+  version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
+  subpackages:
+  - codec
 - name: golang.org/x/net
-  version: c81e7f25cb61200d8bf0ae971a0bac8cb638d5bc
+  version: c8c74377599bd978aee1cf3b9b63a8634051cec2
   subpackages:
   - context
   - http2
@@ -27,19 +62,19 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/text
-  version: 6353ef0f924300eea566d3438817aa4d3374817e
+  version: cfdf022e86b4ecfb646e1efbd7db175dd623a8fa
   subpackages:
   - secure/bidirule
   - transform
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: aa2eb687b4d3e17154372564ad8d6bf11c3cf21f
+  version: b0a3dcfcd1a9bd48e63634bd8802960804cf8315
   subpackages:
   - googleapis/api/annotations
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 3c33c26290b747350f8650c7d38bcc51b42dc785
+  version: 8050b9cbc271307e5a716a9d782803d09b0d6f2d
   subpackages:
   - codes
   - credentials
@@ -51,6 +86,7 @@ imports:
   - naming
   - peer
   - reflection
+  - reflection/grpc_reflection_v1alpha
   - stats
   - status
   - tap
