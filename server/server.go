@@ -33,13 +33,16 @@ func (o OrchestrationServer) CallTask(ctx context.Context, t *orchestration.Task
   workflow.InputParameters = t.Parameters
 
   if resultCore, err = core.RunWorkflow(workflow, wm); err != nil {
+    tasks.DeleteWM(t.Tracking)
     return resultTask, err
   }
 
   if result, err = core.ConvertResults(resultCore); err != nil {
+    tasks.DeleteWM(t.Tracking)
     return resultTask, err
   }
 
+  tasks.DeleteWM(t.Tracking)
   return &orchestration.Result{Response: result}, nil
 }
 

@@ -11,7 +11,14 @@ import (
 )
 
 func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
-  return runWorkflow(workflow, wm)
+  var (
+    results Results
+    err	    error
+  )
+
+  results, err = runWorkflow(workflow, wm)
+
+  return results, err
 }
 
 func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
@@ -65,6 +72,7 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
 	ref = reflect.New(tasks.TR[st.Task].StructTask)
 
 	if err = json.Unmarshal(body, ref.Interface()); err != nil {
+	  errTask <-err
 	  closeTasks(steps)
 	  return
 	}
