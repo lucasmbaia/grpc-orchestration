@@ -22,22 +22,23 @@ type stepInfos struct {
   Mutex		*sync.Mutex
 }
 
-func setStepTasks(workflow tasks.Workflow) stepInfos {
+func setStepTasks(workflow tasks.Workflow, err chan error) stepInfos {
   var (
     step  stepInfos
     f	  reflect.Value
-    err	  error
   )
 
   step.ReadyTasks = make(chan stepTasks, len(workflow.Tasks))
+  step.Dependents = make(map[string][]*sync.WaitGroup)
+  step.UncheckedDeps = make(map[string]int)
   step.Mutex = &sync.Mutex{}
 
   for _, task := range workflow.Tasks {
     f = reflect.Indirect(reflect.ValueOf(tasks.TR[task.TaskReference].Task))
 
     if len(task.Dependency) > 0 {
-      var wg = &sync.WaitGroup{}
-      wg.Add(1)
+      var wg = new(sync.WaitGroup)
+      wg.Add(len(task.Dependency))
 
       for _, name := range task.Dependency {
 	step.Dependents[name] = append(step.Dependents[name], wg)
@@ -50,12 +51,17 @@ func setStepTasks(workflow tasks.Workflow) stepInfos {
 
 	step.Mutex.Lock()
 
-	if err != nil {
+	select {
+	case _ = <-err:
 	  step.Mutex.Unlock()
 	  return
+	default:
+	  step.Mutex.Unlock()
 	}
-
-	step.Mutex.Unlock()
+	/*if err != nil {
+	  step.Mutex.Unlock()
+	  return
+	}*/
 
 	step.ReadyTasks <- stepTasks{FN: task, HasDependency: true, Key: key, DepName: dep, Task: taskReference}
       }(wg, f, task.Name, task.TaskReference, task.Dependency)

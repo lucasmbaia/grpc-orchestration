@@ -7,6 +7,7 @@ import (
   "github.com/lucasmbaia/grpc-orchestration/tasks"
   "runtime"
   "path/filepath"
+  "log"
 )
 
 func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
@@ -21,10 +22,11 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
     totalTasks	= len(workflow.Tasks)
     body        = []byte(workflow.InputParameters)
     err		error
+    errTask	= make(chan error, 1)
     rep         = strings.NewReplacer(".", "", "-", "", "fm", "")
   )
 
-  steps = setStepTasks(workflow)
+  steps = setStepTasks(workflow, errTask)
 
   for task := range steps.ReadyTasks {
     go func(st stepTasks) {
@@ -80,6 +82,7 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
 	    argsRes = append(argsRes, output[r])
 	  } else {
 	    if err, ok = output[r].Interface().(error); ok {
+	      errTask <-err
 	      closeTasks(steps)
 	      return
 	    }
@@ -100,12 +103,14 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
 
 	if totalTasks == 0 {
 	  close(steps.ReadyTasks)
+	  close(errTask)
 	}
       }
     }(task)
   }
 
-  return results, nil
+  log.Println(results)
+  return results, err
 }
 
 func setArgs(args []reflect.Value, body []byte, tS reflect.Type) (reflect.Value, error) {

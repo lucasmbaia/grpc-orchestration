@@ -22,6 +22,7 @@ func (o OrchestrationServer) CallTask(ctx context.Context, t *orchestration.Task
     wm		= new(tasks.WorkflowManager)
     resultCore	core.Results
     resultTask	*orchestration.Result
+    result	map[string]string
   )
 
   if workflow, err = tasks.GetWorkflow(t.Name); err != nil {
@@ -35,11 +36,11 @@ func (o OrchestrationServer) CallTask(ctx context.Context, t *orchestration.Task
     return resultTask, err
   }
 
-  if resultTask.Response, err = core.ConvertResults(resultCore); err != nil {
+  if result, err = core.ConvertResults(resultCore); err != nil {
     return resultTask, err
   }
 
-  return resultTask, nil
+  return &orchestration.Result{Response: result}, nil
 }
 
 func (o OrchestrationServer) Health(ctx context.Context, emp *empty.Empty) (*empty.Empty, error) {

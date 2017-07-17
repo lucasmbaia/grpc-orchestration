@@ -5,6 +5,7 @@ import (
   "io/ioutil"
   "errors"
   "path"
+  "sync"
   "os"
 
   "github.com/lucasmbaia/go-environment/etcd"
@@ -46,6 +47,7 @@ type WM map[string]*WorkflowManager
 var (
   WManager	      = make(map[string]*WorkflowManager)
   WorkflowsRegistred  = make(map[string]Workflow)
+  Mutex		      = &sync.Mutex{}
 )
 
 func (c ConfigWorkflow) RegisterWorkflows() error {
@@ -135,7 +137,9 @@ func RegisterWM(key string) *WorkflowManager {
     wm = &WorkflowManager{Signal: make(chan os.Signal), Stop: make(chan bool, 1), Restart: make(chan bool, 1)}
   )
 
+  Mutex.Lock()
   WManager[key] = wm
+  Mutex.Unlock()
 
   return wm
 }

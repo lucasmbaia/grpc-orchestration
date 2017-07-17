@@ -3,9 +3,12 @@ import:
 - package: golang.org/x/net/context
 - package: google.golang.org/grpc
 - package: google.golang.org/grpc/reflection
-- package: github.com/golang/protobuf/proto
+- package: github.com/google/go-genproto/tree/master/googleapis/api/annotations
+- package: github.com/golang/protobuf
 - package: github.com/grpc-ecosystem/grpc-gateway
   version: 1.2.0
 - package: github.com/hashicorp/consul/api
 - package: github.com/lucasmbaia/go-environment
-- package: github.com/coreos/etcd/client
+- package: github.com/lucasmbaia/grpc-base
+- package: github.com/lucasmbaia/grpc-fibonacci
+- package: github.com/lucasmbaia/grpc-mathoperations

@@ -27,6 +27,7 @@ type Config struct {
   CAFile                string	  `env:"CA_FILE" envDefault:""`
   ServerNameAuthority   string	  `env:"SERVER_NAME_AUTHORITY" envDefault:""`
   WorkflowsName		[]string  `env:"WORKFLOWS_NAME" envDefault:""`
+  GrpcSSL		bool	  `env:"GRPC_SSL" envDefault:""`
 }
 
 type Service struct {
@@ -64,4 +65,17 @@ func LoadConfig() {
 
     parsed = true
   }
+}
+
+func LoadLocalEnv() (Service, error) {
+  var (
+    err	    error
+    service Service
+  )
+
+  if err = local.Get("", &service, true, false); err != nil {
+    return service, err
+  }
+
+  return service, nil
 }
