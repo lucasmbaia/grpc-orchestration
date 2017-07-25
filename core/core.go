@@ -7,21 +7,26 @@ import (
   "github.com/lucasmbaia/grpc-orchestration/tasks"
   "runtime"
   "path/filepath"
-  "log"
 )
 
 func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
   var (
     results Results
     err	    error
+    args    []reflect.Value
   )
 
-  results, err = runWorkflow(workflow, wm)
+  if results, err = runWorkflow(workflow, wm, false, args); err != nil {
+    //if workflow.Rollback.Name != "" {
+      //go rollback(workflow.Rollback.Name, workflow.Rollback.Step, results)
+    //}
+  }
 
+    go rollback(workflow, results)
   return results, err
 }
 
-func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
+func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bool, argsRollback []reflect.Value) (Results, error) {
   var (
     steps	stepInfos
     results	= make(Results, len(workflow.Tasks))
@@ -29,8 +34,9 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
     totalTasks	= len(workflow.Tasks)
     body        = []byte(workflow.InputParameters)
     err		error
-    errTask	= make(chan error, 1)
+    errTask	= make(chan error, len(workflow.Tasks))
     rep         = strings.NewReplacer(".", "", "-", "", "fm", "")
+    size	= len(workflow.Tasks)
   )
 
   steps = setStepTasks(workflow, errTask)
@@ -54,6 +60,12 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
 
       if t.NumIn() > 0 {
 	for i := 0; i < t.NumIn(); i++ {
+	  if rollback {
+	    for _, dep := range argsRollback {
+	      argsDep = append(argsDep, dep)
+	    }
+	  }
+
 	  for _, depName := range st.DepName {
 	    for _, dep := range results[depName] {
 	      argsDep = append(argsDep, dep)
@@ -71,10 +83,15 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
 
 	ref = reflect.New(tasks.TR[st.Task].StructTask)
 
-	if err = json.Unmarshal(body, ref.Interface()); err != nil {
-	  errTask <-err
-	  closeTasks(steps)
-	  return
+	if len(body) > 0 {
+	  if err = json.Unmarshal(body, ref.Interface()); err != nil {
+	    for i := 0; i < size; i++ {
+	      errTask <-err
+	    }
+
+	    closeTasks(steps)
+	    return
+	  }
 	}
 
 	output = reflect.ValueOf(ref.Interface()).MethodByName(fName).Call(args)
@@ -90,7 +107,10 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
 	    argsRes = append(argsRes, output[r])
 	  } else {
 	    if err, ok = output[r].Interface().(error); ok {
-	      errTask <-err
+	      for i := 0; i < size; i++ {
+		errTask <-err
+	      }
+
 	      closeTasks(steps)
 	      return
 	    }
@@ -117,7 +137,6 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
     }(task)
   }
 
-  log.Println(results)
   return results, err
 }
 

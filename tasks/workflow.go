@@ -66,7 +66,6 @@ func (c ConfigWorkflow) RegisterWorkflows() error {
     var (
       config	etcd.Config
       client	etcd.Client
-      workflow	Workflow
     )
 
     config = etcd.Config {
@@ -79,6 +78,8 @@ func (c ConfigWorkflow) RegisterWorkflows() error {
     }
 
     for _, key := range c.Keys {
+      var workflow Workflow
+
       if err = client.Get(key, &workflow, false, false); err != nil {
 	return err
       }
@@ -145,11 +146,24 @@ func RegisterWM(key string) *WorkflowManager {
 }
 
 func DeleteWM(key string) {
+  Mutex.Lock()
+
   if _, ok := WManager[key]; ok {
     delete(WManager, key)
   }
 
+  Mutex.Unlock()
   return
+}
+
+func GetTasksWorkflow(tasks []TasksFlow, step string) (int, bool) {
+  for index, task := range tasks {
+    if task.Name == step {
+      return index, true
+    }
+  }
+
+  return 0, false
 }
 
 func unmarshalWorkflow(body []byte) (Workflow, error) {

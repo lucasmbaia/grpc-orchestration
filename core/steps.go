@@ -58,10 +58,6 @@ func setStepTasks(workflow tasks.Workflow, err chan error) stepInfos {
 	default:
 	  step.Mutex.Unlock()
 	}
-	/*if err != nil {
-	  step.Mutex.Unlock()
-	  return
-	}*/
 
 	step.ReadyTasks <- stepTasks{FN: task, HasDependency: true, Key: key, DepName: dep, Task: taskReference}
       }(wg, f, task.Name, task.TaskReference, task.Dependency)
