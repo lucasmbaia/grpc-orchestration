@@ -12,3 +12,5 @@ import:
 - package: github.com/lucasmbaia/grpc-base
 - package: github.com/lucasmbaia/grpc-fibonacci
 - package: github.com/lucasmbaia/grpc-mathoperations
+- package: github.com/opentracing/opentracing-go
+- package: github.com/openzipkin/zipkin-go-opentracing

@@ -4,9 +4,12 @@ import (
   "encoding/json"
   "reflect"
   "strings"
-  "github.com/lucasmbaia/grpc-orchestration/tasks"
   "runtime"
   "path/filepath"
+
+  "github.com/lucasmbaia/grpc-orchestration/tasks"
+  "github.com/opentracing/opentracing-go"
+  zipkin "github.com/openzipkin/zipkin-go-opentracing"
 )
 
 func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
@@ -17,12 +20,12 @@ func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
   )
 
   if results, err = runWorkflow(workflow, wm, false, args); err != nil {
+    go rollback(workflow, results)
     //if workflow.Rollback.Name != "" {
       //go rollback(workflow.Rollback.Name, workflow.Rollback.Step, results)
     //}
   }
 
-    go rollback(workflow, results)
   return results, err
 }
 
@@ -37,8 +40,20 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
     errTask	= make(chan error, len(workflow.Tasks))
     rep         = strings.NewReplacer(".", "", "-", "", "fm", "")
     size	= len(workflow.Tasks)
+    collector	zipkin.Collector
+    tracer	opentracing.Tracer
+    parent	opentracing.Span
   )
 
+  if collector, err = zipkin.NewHTTPCollector("http://172.16.95.113:9411/api/v1/spans"); err != nil {
+    return results, err
+  }
+
+  if tracer, err = zipkin.NewTracer(zipkin.NewRecorder(collector, false, "127.0.0.1:0", "orchestration")); err != nil {
+    return results, err
+  }
+
+  parent = tracer.StartSpan("Parent")
   steps = setStepTasks(workflow, errTask)
 
   for task := range steps.ReadyTasks {
@@ -53,9 +68,18 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	ok	bool
 	t	reflect.Type
 	argsDep	[]reflect.Value
+	child	opentracing.Span
       )
 
       defer steps.Mutex.Unlock()
+
+      rName = runtime.FuncForPC(reflect.ValueOf(tasks.TR[st.Task].Task).Pointer()).Name()
+      fName = rep.Replace(filepath.Ext(rName))
+
+      parent.LogEvent("Start goroutine to exec function " + fName)
+      child = tracer.StartSpan("Function name: " + fName, opentracing.ChildOf(parent.Context()))
+      child.SetTag("FN", st.FN)
+
       t = st.FN.Type()
 
       if t.NumIn() > 0 {
@@ -78,9 +102,6 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
       }
 
       if tasks.TR[st.Task].StructTask != nil {
-	rName = runtime.FuncForPC(reflect.ValueOf(tasks.TR[st.Task].Task).Pointer()).Name()
-	fName = rep.Replace(filepath.Ext(rName))
-
 	ref = reflect.New(tasks.TR[st.Task].StructTask)
 
 	if len(body) > 0 {
@@ -90,6 +111,7 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	    }
 
 	    closeTasks(steps)
+	    child.Finish()
 	    return
 	  }
 	}
@@ -112,6 +134,7 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	      }
 
 	      closeTasks(steps)
+	      child.Finish()
 	      return
 	    }
 	  }
@@ -134,8 +157,13 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	  close(errTask)
 	}
       }
+
+      child.Finish()
     }(task)
   }
+
+  parent.LogEvent("Finished Task")
+  parent.Finish()
 
   return results, err
 }
