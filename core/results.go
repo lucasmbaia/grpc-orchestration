@@ -1,6 +1,7 @@
 package core
 
 import (
+  "strings"
   "reflect"
   "encoding/json"
 )
@@ -25,4 +26,35 @@ func ConvertResults(res Results) (map[string]string, error) {
   }
 
   return r, nil
+}
+
+func ConvertMapToString(m map[string]string) string {
+  var (
+    body  []byte
+    err	  error
+  )
+
+  if body, err = json.Marshal(m); err != nil {
+    return err.Error()
+  }
+
+  return string(body)
+}
+
+func convertArgsToString(r []reflect.Value) string {
+  var (
+    body  []byte
+    err	  error
+    args  []string
+  )
+
+  for _, value := range r {
+    if body, err = json.Marshal(value.Interface()); err != nil {
+      return err.Error()
+    }
+
+    args = append(args, string(body))
+  }
+
+  return strings.Join(args, ",")
 }

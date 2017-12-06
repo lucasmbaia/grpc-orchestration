@@ -8,6 +8,7 @@ import (
   "github.com/lucasmbaia/grpc-orchestration/server"
   "github.com/lucasmbaia/grpc-orchestration/proto"
   "github.com/lucasmbaia/grpc-base/config"
+  configOrchestration "github.com/lucasmbaia/grpc-orchestration/config"
   "github.com/lucasmbaia/grpc-base/base"
   mathoperations "github.com/lucasmbaia/grpc-mathoperations/client"
   fibonacci "github.com/lucasmbaia/grpc-fibonacci/client"
@@ -15,6 +16,7 @@ import (
 
 func init() {
   config.LoadConfig()
+  configOrchestration.LoadConfig()
 }
 
 func main() {

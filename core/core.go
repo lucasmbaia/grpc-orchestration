@@ -7,19 +7,20 @@ import (
   "runtime"
   "path/filepath"
 
+  "golang.org/x/net/context"
   "github.com/lucasmbaia/grpc-orchestration/tasks"
-  "github.com/opentracing/opentracing-go"
-  zipkin "github.com/openzipkin/zipkin-go-opentracing"
+  "github.com/lucasmbaia/grpc-base/config"
+  "github.com/lucasmbaia/grpc-base/zipkin"
 )
 
-func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
+func RunWorkflow(ctx context.Context, workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, error) {
   var (
     results Results
     err	    error
     args    []reflect.Value
   )
 
-  if results, err = runWorkflow(workflow, wm, false, args); err != nil {
+  if results, err = runWorkflow(ctx, workflow, wm, false, args); err != nil {
     go rollback(workflow, results)
     //if workflow.Rollback.Name != "" {
       //go rollback(workflow.Rollback.Name, workflow.Rollback.Step, results)
@@ -29,7 +30,7 @@ func RunWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager) (Results, e
   return results, err
 }
 
-func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bool, argsRollback []reflect.Value) (Results, error) {
+func runWorkflow(ctx context.Context, workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bool, argsRollback []reflect.Value) (Results, error) {
   var (
     steps	stepInfos
     results	= make(Results, len(workflow.Tasks))
@@ -40,45 +41,28 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
     errTask	= make(chan error, len(workflow.Tasks))
     rep         = strings.NewReplacer(".", "", "-", "", "fm", "")
     size	= len(workflow.Tasks)
-    collector	zipkin.Collector
-    tracer	opentracing.Tracer
-    parent	opentracing.Span
   )
 
-  if collector, err = zipkin.NewHTTPCollector("http://172.16.95.113:9411/api/v1/spans"); err != nil {
-    return results, err
-  }
-
-  if tracer, err = zipkin.NewTracer(zipkin.NewRecorder(collector, false, "127.0.0.1:0", "orchestration")); err != nil {
-    return results, err
-  }
-
-  parent = tracer.StartSpan("Parent")
   steps = setStepTasks(workflow, errTask)
 
   for task := range steps.ReadyTasks {
     go func(st stepTasks) {
       var (
-	args	[]reflect.Value
-	argsRes	[]reflect.Value
-	output	[]reflect.Value
-	fName	string
-	rName	string
-	ref	reflect.Value
-	ok	bool
-	t	reflect.Type
-	argsDep	[]reflect.Value
-	child	opentracing.Span
+	args		[]reflect.Value
+	argsRes		[]reflect.Value
+	output		[]reflect.Value
+	fName		string
+	rName		string
+	ref		reflect.Value
+	ok		bool
+	t		reflect.Type
+	argsDep		[]reflect.Value
       )
 
       defer steps.Mutex.Unlock()
 
       rName = runtime.FuncForPC(reflect.ValueOf(tasks.TR[st.Task].Task).Pointer()).Name()
       fName = rep.Replace(filepath.Ext(rName))
-
-      parent.LogEvent("Start goroutine to exec function " + fName)
-      child = tracer.StartSpan("Function name: " + fName, opentracing.ChildOf(parent.Context()))
-      child.SetTag("FN", st.FN)
 
       t = st.FN.Type()
 
@@ -96,7 +80,7 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	    }
 	  }
 
-	  sA, _ = setArgs(argsDep, body, t.In(i))
+	  sA, _ = setArgs(ctx, argsDep, body, t.In(i))
 	  args = append(args, sA)
 	}
       }
@@ -104,15 +88,14 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
       if tasks.TR[st.Task].StructTask != nil {
 	ref = reflect.New(tasks.TR[st.Task].StructTask)
 
-	if len(body) > 0 {
-	  if err = json.Unmarshal(body, ref.Interface()); err != nil {
-	    for i := 0; i < size; i++ {
-	      errTask <-err
+	if config.EnvConfig.TracerServer {
+	  switch ref.Type().Kind() {
+	  case reflect.Ptr:
+	    for i := 0; i < ref.Type().Elem().NumField(); i++ {
+	      if ref.Type().Elem().Field(i).Name == "Config" || ref.Type().Elem().Field(i).Name == "Collector" {
+		ref.Elem().FieldByName("Collector").Set(reflect.ValueOf(config.EnvConfig.ZipKinTracer.(zipkin.Collector)))
+	      }
 	    }
-
-	    closeTasks(steps)
-	    child.Finish()
-	    return
 	  }
 	}
 
@@ -134,7 +117,6 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	      }
 
 	      closeTasks(steps)
-	      child.Finish()
 	      return
 	    }
 	  }
@@ -157,18 +139,13 @@ func runWorkflow(workflow tasks.Workflow, wm *tasks.WorkflowManager, rollback bo
 	  close(errTask)
 	}
       }
-
-      child.Finish()
     }(task)
   }
-
-  parent.LogEvent("Finished Task")
-  parent.Finish()
 
   return results, err
 }
 
-func setArgs(args []reflect.Value, body []byte, tS reflect.Type) (reflect.Value, error) {
+func setArgs(ctx context.Context, args []reflect.Value, body []byte, tS reflect.Type) (reflect.Value, error) {
   var (
     err	      error
     numFields int
@@ -190,6 +167,11 @@ func setArgs(args []reflect.Value, body []byte, tS reflect.Type) (reflect.Value,
     if err = json.Unmarshal(body, &s); err != nil {
       return s, err
     }
+  case reflect.Interface:
+    s = reflect.New(tS).Elem()
+    s.Set(reflect.ValueOf(ctx))
+
+    return s, err
   }
 
   for _, arg := range args {

@@ -32,7 +32,7 @@ func RegisterTasksReferences(tr TasksReferencesInfos) error {
 
     for i := 0; i < t.NumIn(); i++ {
       if t.In(i).Kind() != reflect.Ptr && t.In(i).Kind() != reflect.Struct {
-	return fmt.Errorf("%T Only accepts ptr or struct as parameters ", f)
+	//return fmt.Errorf("%T Only accepts ptr or struct as parameters ", f)
       }
     }
 

@@ -3,6 +3,7 @@ package core
 import (
   "reflect"
 
+  "golang.org/x/net/context"
   "github.com/lucasmbaia/grpc-orchestration/tasks"
 )
 
@@ -51,7 +52,7 @@ func rollback(w	tasks.Workflow, results Results) {
   workflow.InputParameters = w.InputParameters
   wm = tasks.RegisterWM("rollback")
 
-  if _, err = runWorkflow(workflow, wm, true, args); err != nil {
+  if _, err = runWorkflow(context.Background(), workflow, wm, true, args); err != nil {
     return
   }
 
