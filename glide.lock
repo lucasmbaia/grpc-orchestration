@@ -1,12 +1,12 @@
 hash: 62237812058152cf79d2aff8ea4976e42858d1e9278d213ebe72e97ba9b39152
-updated: 2017-12-06T09:49:11.040204864-02:00
+updated: 2017-12-07T10:34:28.354289975-02:00
 imports:
 - name: github.com/apache/thrift
   version: 05a08ce9c177ffbe8c395fdc9e8f5a4c5daef02c
   subpackages:
   - lib/go/thrift
 - name: github.com/coreos/etcd
-  version: 7e0fc6136eb4c5dc3c8c39ff48eb29e87b7158ab
+  version: a2256a6f24115237f0046435d67e5548fe12744a
   subpackages:
   - client
   - pkg/pathutil
@@ -72,18 +72,18 @@ imports:
 - name: github.com/hashicorp/go-rootcerts
   version: 6bb64b370b90e7ef1fa532be9e591a81c3493e00
 - name: github.com/hashicorp/serf
-  version: ecf2bb3b4cb80cf2371d2993fbf1af187f718a84
+  version: a110af454b635c75adc2b7eee541af2c68666d97
   subpackages:
   - coordinate
 - name: github.com/kr/logfmt
   version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
 - name: github.com/lucasmbaia/go-environment
-  version: 7bca66e26f46c1e6cf78426c64f4a59a1756faa1
+  version: 4fdfa148997252ab1801f580134c2c60f6988941
   subpackages:
   - etcd
   - local
 - name: github.com/lucasmbaia/grpc-base
-  version: 416633893d75bc7f2518eb6819242d25729fd4e6
+  version: dc865e5a2b528a64ae92ffdbae2003500eb14f86
   subpackages:
   - base
   - config
@@ -154,7 +154,7 @@ imports:
   - googleapis/api/annotations
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: bf35f1b9619f442d2887b585620f1fa2efa39bc0
+  version: b8191e57b23de650278db4d23bf596219e5f3665
   subpackages:
   - balancer
   - balancer/base
